@@ -311,6 +311,11 @@
             min-width: 36px;
             text-align: center;
         }
+        .track-count {
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+            margin-left: 8px;
+        }
 
         .empty-state {
             text-align: center;
@@ -437,13 +442,19 @@
         #coverInput {
             display: none;
         }
+        .loading-text {
+            color: rgba(255,255,255,0.3);
+            font-size: 13px;
+            text-align: center;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>🎵 Мой плеер</h1>
+        <h1>🎵 Мой плеер <span class="track-count" id="trackCount"></span></h1>
         <div class="header-actions">
             <button onclick="addTrack()">➕ Добавить</button>
         </div>
@@ -509,57 +520,114 @@
     let isPlaying = false;
     let editIndex = null;
     let tempCoverData = null;
+    let isLoaded = false;
 
     // Загрузка из localStorage
     function loadData() {
-        const saved = localStorage.getItem('tracks');
+        const saved = localStorage.getItem('tracksData');
         if (saved) {
             try {
-                tracks = JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                tracks = parsed.map(t => ({
+                    ...t,
+                    // Если есть audioData, создаем blob URL
+                    url: t.audioData ? createAudioUrl(t.audioData) : null
+                }));
             } catch (e) {
                 tracks = [];
             }
         }
-        // Удаляем треки без URL или с невалидным URL
-        tracks = tracks.filter(t => t.url && t.url.startsWith('blob:'));
+        // Удаляем треки без аудио данных
+        tracks = tracks.filter(t => t.audioData);
         renderTracks();
+        updateTrackCount();
+        isLoaded = true;
+    }
+
+    // Создание URL из base64
+    function createAudioUrl(base64Data) {
+        try {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+            return URL.createObjectURL(blob);
+        } catch (e) {
+            console.error('Ошибка создания URL из base64:', e);
+            return null;
+        }
+    }
+
+    // Конвертация файла в base64
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                // Убираем префикс "data:audio/...;base64,"
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     function saveData() {
-        localStorage.setItem('tracks', JSON.stringify(tracks));
+        // Сохраняем только метаданные и audioData (без url)
+        const dataToSave = tracks.map(t => ({
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            cover: t.cover,
+            audioData: t.audioData
+        }));
+        localStorage.setItem('tracksData', JSON.stringify(dataToSave));
+        updateTrackCount();
+    }
+
+    function updateTrackCount() {
+        document.getElementById('trackCount').textContent = `(${tracks.length})`;
     }
 
     // ====================== ДОБАВЛЕНИЕ ======================
-    function addTrack() {
+    async function addTrack() {
         const input = document.createElement('input');
         input.type = 'file';
-        // Явно указываем все аудио форматы
         input.accept = 'audio/mpeg,audio/wav,audio/ogg,audio/aac,audio/flac,audio/x-m4a,audio/mp4,audio/*';
         input.multiple = false;
         
-        input.onchange = function(e) {
+        input.onchange = async function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            // Проверяем что это аудио
             if (!file.type.startsWith('audio/')) {
                 alert('Пожалуйста, выберите аудиофайл!');
                 return;
             }
-            
-            const url = URL.createObjectURL(file);
-            const track = {
-                id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-                title: file.name.replace(/\.[^/.]+$/, ''),
-                artist: 'Неизвестный',
-                cover: null,
-                url: url
-            };
-            tracks.push(track);
-            saveData();
-            renderTracks();
-            // Автовоспроизведение
-            playTrack(track.id);
+
+            try {
+                // Конвертируем в base64
+                const base64 = await fileToBase64(file);
+                const track = {
+                    id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    title: file.name.replace(/\.[^/.]+$/, ''),
+                    artist: 'Неизвестный',
+                    cover: null,
+                    audioData: base64,
+                    url: createAudioUrl(base64)
+                };
+                tracks.push(track);
+                saveData();
+                renderTracks();
+                // Автовоспроизведение
+                playTrack(track.id);
+            } catch (error) {
+                console.error('Ошибка загрузки файла:', error);
+                alert('Не удалось загрузить файл');
+            }
         };
         input.click();
     }
@@ -576,7 +644,7 @@
             `;
             return;
         }
-        list.innerHTML = tracks.map((track, index) => {
+        list.innerHTML = tracks.map((track) => {
             const isActive = track.id === currentTrackId;
             const coverHtml = track.cover ? 
                 `<img src="${track.cover}" alt="cover">` : 
@@ -596,6 +664,7 @@
             `;
         }).join('');
         updatePlayerUI();
+        updateTrackCount();
     }
 
     function escapeHtml(text) {
@@ -607,7 +676,24 @@
     // ====================== ПЛЕЕР ======================
     function playTrack(id) {
         const track = tracks.find(t => t.id === id);
-        if (!track) return;
+        if (!track) {
+            console.error('Трек не найден:', id);
+            return;
+        }
+
+        // Если нет URL, создаем его из audioData
+        if (!track.url && track.audioData) {
+            track.url = createAudioUrl(track.audioData);
+            if (!track.url) {
+                alert('Не удалось загрузить аудио');
+                return;
+            }
+        }
+
+        if (!track.url) {
+            alert('Аудио данные отсутствуют');
+            return;
+        }
         
         currentTrackId = id;
         audio.pause();
@@ -619,25 +705,24 @@
             document.getElementById('timeSlider').max = audio.duration;
             document.getElementById('totalTime').textContent = formatTime(audio.duration);
         };
+        audio.onerror = function(e) {
+            console.error('Ошибка воспроизведения:', e);
+            // Пробуем пересоздать URL
+            if (track.audioData) {
+                track.url = createAudioUrl(track.audioData);
+                if (track.url) {
+                    playTrack(id);
+                }
+            }
+        };
         audio.play().then(() => {
             isPlaying = true;
             updatePlayerUI();
             updateMediaSession(track);
         }).catch((err) => {
             console.error('Ошибка воспроизведения:', err);
-            // Если не удалось воспроизвести, пробуем пересоздать URL
-            if (track.url && track.url.startsWith('blob:')) {
-                // Пересоздаем blob URL
-                fetch(track.url)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const newUrl = URL.createObjectURL(blob);
-                        track.url = newUrl;
-                        saveData();
-                        playTrack(id);
-                    })
-                    .catch(() => {});
-            }
+            isPlaying = false;
+            updatePlayerUI();
         });
         renderTracks();
         updatePlayerUI();
@@ -654,7 +739,8 @@
         } else {
             audio.play().then(() => {
                 isPlaying = true;
-                updateMediaSession(tracks.find(t => t.id === currentTrackId));
+                const track = tracks.find(t => t.id === currentTrackId);
+                if (track) updateMediaSession(track);
             }).catch(() => {});
         }
         updatePlayerUI();
@@ -760,7 +846,7 @@
         if (!confirm('Удалить трек?')) return;
         const idx = tracks.findIndex(t => t.id === id);
         if (idx === -1) return;
-        if (tracks[idx].url && tracks[idx].url.startsWith('blob:')) {
+        if (tracks[idx].url) {
             URL.revokeObjectURL(tracks[idx].url);
         }
         tracks.splice(idx, 1);
@@ -843,8 +929,16 @@
         if (e.code === 'ArrowLeft') { e.preventDefault(); audio.currentTime -= 10; }
     });
 
+    // Очистка URL при закрытии
+    window.addEventListener('beforeunload', function() {
+        tracks.forEach(t => {
+            if (t.url) URL.revokeObjectURL(t.url);
+        });
+    });
+
     console.log('🎵 Плеер загружен! Данные сохраняются в localStorage.');
     console.log('📱 Поддерживает Dynamic Island / Media Session');
+    console.log(`📊 Загружено треков: ${tracks.length}`);
 </script>
 
 </body>
