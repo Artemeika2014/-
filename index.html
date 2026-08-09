@@ -397,7 +397,7 @@
             font-size: 14px;
         }
 
-        /* Модалка иконки */
+        /* Модалка иконки - без фона, только изображение */
         .modal {
             position: fixed;
             top: 0;
@@ -461,17 +461,18 @@
             gap: 12px;
             margin: 12px 0;
         }
+        /* Иконка занимает ВСЮ область без фона */
         .modal-content .icon-preview-box {
-            width: 120px;
-            height: 120px;
+            width: 150px;
+            height: 150px;
             border-radius: 24px;
             overflow: hidden;
-            background: linear-gradient(135deg, #1a1a3e, #302b63);
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid rgba(255,255,255,0.1);
             position: relative;
+            background: transparent;
         }
         .modal-content .icon-preview-box img {
             width: 100%;
@@ -479,9 +480,8 @@
             object-fit: cover;
         }
         .modal-content .icon-preview-box .placeholder {
-            color: rgba(255,255,255,0.3);
-            font-size: 12px;
-            text-align: center;
+            font-size: 64px;
+            line-height: 1;
         }
         .modal-content .icon-emoji-options {
             display: flex;
@@ -506,28 +506,6 @@
         .modal-content .icon-emoji-options button.active {
             border-color: #3b82f6;
             background: rgba(59, 130, 246, 0.2);
-        }
-        .modal-content .color-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .modal-content .color-row input[type="color"] {
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 2px;
-            cursor: pointer;
-            background: transparent;
-        }
-        .modal-content .color-row input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        .modal-content .color-row input[type="color"]::-webkit-color-swatch {
-            border: none;
-            border-radius: 6px;
         }
         .modal-content .file-upload-area {
             border: 2px dashed rgba(255,255,255,0.15);
@@ -575,7 +553,6 @@
             background: rgba(255,255,255,0.15);
         }
 
-        /* Модалка трека */
         .modal-track .cover-preview {
             width: 120px;
             height: 120px;
@@ -699,13 +676,7 @@
             </div>
         </div>
 
-        <label>Цвет фона</label>
-        <div class="color-row">
-            <input type="color" id="iconBgColor" value="#1a1a3e" oninput="updateIconPreview()">
-            <span style="font-size:13px;color:rgba(255,255,255,0.4);">Выберите цвет</span>
-        </div>
-
-        <label>Или загрузите свою иконку</label>
+        <label>Или загрузите свою иконку (PNG с прозрачностью)</label>
         <div class="file-upload-area" onclick="document.getElementById('iconFileInput').click()">
             <div>📁 Нажмите чтобы загрузить PNG</div>
             <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">Рекомендуется 512×512px</div>
@@ -744,11 +715,9 @@
 <script>
     // ====================== ICON STORAGE ======================
     let selectedEmoji = '🎵';
-    let iconBgColor = '#1a1a3e';
     let customIconData = null;
-    let currentIconType = 'emoji'; // 'emoji' или 'custom'
+    let currentIconType = 'emoji';
 
-    // Загрузка сохраненной иконки
     function loadIconData() {
         const saved = localStorage.getItem('pwaIconData');
         if (saved) {
@@ -756,12 +725,11 @@
                 const data = JSON.parse(saved);
                 if (data.type === 'emoji') {
                     selectedEmoji = data.emoji || '🎵';
-                    iconBgColor = data.bgColor || '#1a1a3e';
                     currentIconType = 'emoji';
+                    customIconData = null;
                 } else if (data.type === 'custom' && data.imageData) {
                     customIconData = data.imageData;
                     currentIconType = 'custom';
-                    iconBgColor = data.bgColor || '#1a1a3e';
                 }
                 updateIconPreview();
             } catch (e) {}
@@ -771,7 +739,6 @@
     function saveIconData() {
         const data = {
             type: currentIconType,
-            bgColor: iconBgColor,
             emoji: selectedEmoji,
             imageData: customIconData
         };
@@ -795,7 +762,6 @@
         reader.onload = function(e) {
             customIconData = e.target.result;
             currentIconType = 'custom';
-            // Убираем активность с эмодзи
             document.querySelectorAll('.icon-emoji-options button').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -806,7 +772,6 @@
     }
 
     function updateIconPreview() {
-        const previewBox = document.getElementById('iconPreviewBox');
         const img = document.getElementById('iconPreviewImg');
         const placeholder = document.getElementById('iconPlaceholder');
 
@@ -814,13 +779,10 @@
             img.src = customIconData;
             img.style.display = 'block';
             placeholder.style.display = 'none';
-            previewBox.style.background = iconBgColor;
         } else {
             img.style.display = 'none';
             placeholder.style.display = 'block';
             placeholder.textContent = selectedEmoji;
-            previewBox.style.background = iconBgColor;
-            previewBox.style.fontSize = '48px';
         }
     }
 
@@ -832,100 +794,54 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
             
-            // Фон
-            ctx.fillStyle = iconBgColor;
-            const radius = size * 0.22;
-            const padding = size * 0.04;
-            const path = new Path2D();
-            const x = padding, y = padding, w = size - padding * 2, h = size - padding * 2;
-            path.moveTo(x + radius, y);
-            path.lineTo(x + w - radius, y);
-            path.quadraticCurveTo(x + w, y, x + w, y + radius);
-            path.lineTo(x + w, y + h - radius);
-            path.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-            path.lineTo(x + radius, y + h);
-            path.quadraticCurveTo(x, y + h, x, y + h - radius);
-            path.lineTo(x, y + radius);
-            path.quadraticCurveTo(x, y, x + radius, y);
-            path.closePath();
-            ctx.fill(path);
-
-            // Стеклянный эффект
-            const glassGrad = ctx.createLinearGradient(0, 0, size * 0.8, size * 0.8);
-            glassGrad.addColorStop(0, 'rgba(255,255,255,0.2)');
-            glassGrad.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-            glassGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = glassGrad;
-            ctx.fill(path);
-
-            // Блик
-            const highlightGrad = ctx.createLinearGradient(0, 0, 0, size * 0.4);
-            highlightGrad.addColorStop(0, 'rgba(255,255,255,0.15)');
-            highlightGrad.addColorStop(0.5, 'rgba(255,255,255,0.03)');
-            highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            const hr = roundedRectPath(ctx, padding + size * 0.08, padding + size * 0.08, size * 0.84, size * 0.35, radius * 0.8);
-            ctx.fillStyle = highlightGrad;
-            ctx.fill(hr);
-
-            // Иконка
-            const emojiSize = size * 0.45;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = `${emojiSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-            ctx.shadowColor = 'rgba(0,0,0,0.3)';
-            ctx.shadowBlur = size * 0.06;
-            ctx.shadowOffsetY = size * 0.02;
+            // Прозрачный фон
+            ctx.clearRect(0, 0, size, size);
             
+            // Рисуем иконку по центру
             if (currentIconType === 'custom' && customIconData) {
                 const img = new Image();
                 img.onload = function() {
-                    const iconSize = size * 0.55;
+                    const iconSize = size * 0.85;
                     const ix = (size - iconSize) / 2;
                     const iy = (size - iconSize) / 2;
-                    ctx.shadowColor = 'transparent';
-                    ctx.shadowBlur = 0;
                     ctx.drawImage(img, ix, iy, iconSize, iconSize);
                     resolve(canvas.toDataURL('image/png'));
                 };
+                img.onerror = function() {
+                    // Если не загрузилось, рисуем эмодзи
+                    drawEmojiIcon(ctx, size);
+                    resolve(canvas.toDataURL('image/png'));
+                };
                 img.src = customIconData;
-                return;
+            } else {
+                drawEmojiIcon(ctx, size);
+                resolve(canvas.toDataURL('image/png'));
             }
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(selectedEmoji, size * 0.5, size * 0.52);
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-
-            resolve(canvas.toDataURL('image/png'));
         });
     }
 
-    function roundedRectPath(ctx, x, y, w, h, r) {
-        const path = new Path2D();
-        path.moveTo(x + r, y);
-        path.lineTo(x + w - r, y);
-        path.quadraticCurveTo(x + w, y, x + w, y + r);
-        path.lineTo(x + w, y + h - r);
-        path.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        path.lineTo(x + r, y + h);
-        path.quadraticCurveTo(x, y + h, x, y + h - r);
-        path.lineTo(x, y + r);
-        path.quadraticCurveTo(x, y, x + r, y);
-        path.closePath();
-        return path;
+    function drawEmojiIcon(ctx, size) {
+        const emojiSize = size * 0.7;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `${emojiSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = size * 0.05;
+        ctx.shadowOffsetY = size * 0.02;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(selectedEmoji, size * 0.5, size * 0.52);
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
     }
 
     // ====================== SAVE ICON ======================
     async function saveIcon() {
         try {
-            // Генерируем иконки
             const icon192 = await generateIconImage(192);
             const icon512 = await generateIconImage(512);
 
-            // Сохраняем в localStorage
             saveIconData();
 
-            // Скачиваем иконки
             const link192 = document.createElement('a');
             link192.download = 'icon-192.png';
             link192.href = icon192;
@@ -938,7 +854,6 @@
                 link512.click();
             }, 200);
 
-            // Обновляем manifest (динамически)
             updateManifest(icon192, icon512);
 
             closeIconModal();
@@ -950,7 +865,6 @@
     }
 
     function updateManifest(icon192Data, icon512Data) {
-        // Создаем новый manifest с base64 иконками
         const manifest = {
             name: "Музыкальный плеер",
             short_name: "Плеер",
@@ -976,19 +890,15 @@
             ]
         };
 
-        // Сохраняем в localStorage для использования
         localStorage.setItem('pwaManifest', JSON.stringify(manifest));
 
-        // Обновляем ссылку на manifest
         const manifestLink = document.getElementById('manifestLink');
         if (manifestLink) {
-            // Создаем blob URL для нового manifest
             const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             manifestLink.href = url;
         }
 
-        // Обновляем apple-touch-icon
         const appleIcon = document.getElementById('appleIconLink');
         if (appleIcon) {
             appleIcon.href = icon192Data;
@@ -997,28 +907,7 @@
 
     // ====================== ICON MODAL ======================
     function openIconModal() {
-        // Загружаем сохраненные данные
-        const saved = localStorage.getItem('pwaIconData');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.type === 'emoji') {
-                    selectedEmoji = data.emoji || '🎵';
-                    iconBgColor = data.bgColor || '#1a1a3e';
-                    currentIconType = 'emoji';
-                    customIconData = null;
-                } else if (data.type === 'custom' && data.imageData) {
-                    customIconData = data.imageData;
-                    currentIconType = 'custom';
-                    iconBgColor = data.bgColor || '#1a1a3e';
-                }
-                updateIconPreview();
-                // Обновляем активную кнопку эмодзи
-                document.querySelectorAll('.icon-emoji-options button').forEach(btn => {
-                    btn.classList.toggle('active', btn.textContent === selectedEmoji);
-                });
-            } catch (e) {}
-        }
+        loadIconData();
         document.getElementById('iconModal').classList.add('active');
     }
 
@@ -1026,7 +915,6 @@
         document.getElementById('iconModal').classList.remove('active');
     }
 
-    // Закрытие модалки по клику вне
     document.getElementById('iconModal').addEventListener('click', function(e) {
         if (e.target === this) closeIconModal();
     });
@@ -1055,9 +943,7 @@
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                    store.createIndex('title', 'title', { unique: false });
-                    store.createIndex('artist', 'artist', { unique: false });
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id' });
                 }
             };
         });
@@ -1129,7 +1015,8 @@
     async function addTrack() {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'audio/mpeg,audio/wav,audio/ogg,audio/aac,audio/flac,audio/x-m4a,audio/mp4,audio/*';
+        input.accept = 'audio/*';
+        input.multiple = false;
         
         input.onchange = async function(e) {
             const file = e.target.files[0];
@@ -1205,7 +1092,17 @@
     // ====================== ПЛЕЕР ======================
     function playTrack(id) {
         const track = tracks.find(t => t.id === id);
-        if (!track || !track.url) {
+        if (!track) {
+            showToast('❌ Трек не найден');
+            return;
+        }
+        
+        // Если нет URL, создаем из Blob
+        if (!track.url && track.audioBlob) {
+            track.url = URL.createObjectURL(track.audioBlob);
+        }
+        
+        if (!track.url) {
             showToast('❌ Не удалось загрузить трек');
             return;
         }
@@ -1216,8 +1113,11 @@
         audio.playbackRate = parseFloat(document.getElementById('speedSlider').value);
         audio.ontimeupdate = updateTime;
         audio.onended = nextTrack;
-        audio.onerror = function() {
+        audio.onerror = function(e) {
+            console.error('Ошибка воспроизведения:', e);
             showToast('❌ Ошибка воспроизведения');
+            isPlaying = false;
+            updatePlayerUI();
         };
         audio.onloadedmetadata = function() {
             document.getElementById('timeSlider').max = audio.duration;
@@ -1232,6 +1132,7 @@
             console.error('Ошибка воспроизведения:', err);
             isPlaying = false;
             updatePlayerUI();
+            showToast('❌ Не удалось воспроизвести');
         });
         
         renderTracks();
@@ -1255,7 +1156,9 @@
                 isPlaying = true;
                 const track = tracks.find(t => t.id === currentTrackId);
                 if (track) updateMediaSession(track);
-            }).catch(() => {});
+            }).catch(() => {
+                showToast('❌ Ошибка воспроизведения');
+            });
         }
         updatePlayerUI();
     }
@@ -1478,7 +1381,6 @@
         }
     }
 
-    // Закрытие модалки трека по клику вне
     document.getElementById('editModal').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
@@ -1511,7 +1413,6 @@
         }
     }
 
-    // Горячие клавиши
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName === 'INPUT') return;
         if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -1519,14 +1420,12 @@
         if (e.code === 'ArrowLeft') { e.preventDefault(); audio.currentTime -= 10; }
     });
 
-    // Очистка URL при закрытии
     window.addEventListener('beforeunload', function() {
         tracks.forEach(t => {
             if (t.url) URL.revokeObjectURL(t.url);
         });
     });
 
-    // Запуск
     init();
 </script>
 </body>
