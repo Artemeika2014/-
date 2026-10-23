@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#2b86ff" />
   <title>🎵 LoL Player</title>
 
   <link rel="apple-touch-icon" sizes="180x180" href="https://iili.io/BWMNdRs.jpg">
@@ -24,13 +25,14 @@
     }
     .container { max-width: 600px; margin: 0 auto; }
     .btn {
-      background: rgba(40,40,50,.85); backdrop-filter: blur(12px); border: 2px solid transparent;
+      background: rgba(40,40,50,.85); backdrop-filter: blur(12px);
       background-image: linear-gradient(rgba(40,40,50,.85), rgba(40,40,50,.85)), linear-gradient(120deg, #5B8CFF, #8A5BFF, #5B8CFF);
       background-origin: border-box; background-clip: padding-box, border-box;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 18px rgba(0,0,0,.6);
       cursor: pointer; transition: .2s; border-radius: 50px; padding: 12px 24px;
       font-weight: 700; color: white; font-size: 16px; font-family: 'Comfortaa', sans-serif;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 2px solid transparent;
     }
     .btn:hover { box-shadow: 0 0 12px rgba(120,140,255,.35), 0 8px 18px rgba(0,0,0,.6); transform: translateY(-2px); }
     .btn:active { transform: scale(.97); }
@@ -81,6 +83,13 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    #offlineBanner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+      background: linear-gradient(90deg, #b45309, #dc2626);
+      color: #fff; text-align: center; padding: 6px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
     .player-header {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
     }
@@ -123,10 +132,13 @@
     .track-actions button:hover { background:rgba(255,255,255,0.08); color:#fff; }
     .track-actions .edit-btn:hover { color:#60a5fa; }
     .track-actions .delete-btn:hover { color:#f87171; }
+    .track-actions .download-btn:hover { color:#22c55e; }
     .track-actions button:active { transform:scale(0.85); }
     .track-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); margin-left: 4px; }
     .track-badge.cloud { background: rgba(59,130,246,0.15); color: #60a5fa; }
     .track-badge.local { background: rgba(234,179,8,0.15); color: #fbbf24; }
+    .track-badge.offline-yes { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .track-badge.offline-no { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35); }
 
     .player-widget {
       background: rgba(255,255,255,0.04); border-radius: 16px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06);
@@ -208,6 +220,8 @@
   </style>
 </head>
 <body>
+
+<div id="offlineBanner" class="hidden">📴 Офлайн-режим — играют только 🟢 треки</div>
 
 <div class="container">
   <div class="player-header">
@@ -309,9 +323,9 @@
       <h2>💾 Куда сохранить?</h2>
       <p style="color:rgba(234,241,255,0.5);font-size:14px;margin-bottom:8px;">Выберите, где будет храниться этот трек</p>
       <div class="choice-grid">
-        <button onclick="confirmSaveChoice('cloud')"><span class="icon">☁️</span><div><div>В облачную библиотеку</div><div class="desc">Доступно на всех устройствах через LoL ID</div></div></button>
-        <button onclick="confirmSaveChoice('local')"><span class="icon">📱</span><div><div>Только на этом устройстве</div><div class="desc">Локальное хранение, доступно офлайн</div></div></button>
-        <button onclick="confirmSaveChoice('both')"><span class="icon">🔄</span><div><div>И в облако, и локально</div><div class="desc">Максимальная надёжность</div></div></button>
+        <button onclick="confirmSaveChoice('cloud')"><span class="icon">☁️</span><div><div>В облачную библиотеку</div><div class="desc">Доступно на всех устройствах (без офлайна, пока не скачаете)</div></div></button>
+        <button onclick="confirmSaveChoice('local')"><span class="icon">📱</span><div><div>Только на этом устройстве</div><div class="desc">Сразу в офлайн-хранилище, работает без сети</div></div></button>
+        <button onclick="confirmSaveChoice('both')"><span class="icon">🔄</span><div><div>И в облако, и локально</div><div class="desc">Максимальная надёжность: облако + офлайн</div></div></button>
       </div>
       <div class="modal-actions"><button class="cancel-btn" onclick="cancelChoice()">❌ Отмена</button></div>
     </div>
@@ -335,8 +349,6 @@
           <button onclick="selectEmoji('🎹')">🎹</button>
         </div>
       </div>
-      <label>Цвет фона</label>
-      <div class="color-row"><input type="color" id="iconBgColor" value="#1a1a3e" oninput="updateIconPreview()"><span style="font-size:13px;color:rgba(255,255,255,0.4);">Выберите цвет</span></div>
       <label>Или загрузите свою иконку (PNG с прозрачностью)</label>
       <div class="file-upload-area" onclick="document.getElementById('iconFileInput').click()">
         <div>📁 Нажмите чтобы загрузить PNG</div>
@@ -412,9 +424,14 @@ function formatTime(seconds) {
   const s = Math.floor(seconds % 60);
   return m + ':' + (s < 10 ? '0' : '') + s;
 }
+function formatSize(bytes) {
+  if (!bytes) return '0 Б';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' КБ';
+  return (bytes / 1024 / 1024).toFixed(1) + ' МБ';
+}
 
 // ========================================================================
-// INDEXEDDB
+// INDEXEDDB (хранит и метаданные, и Blob аудио)
 // ========================================================================
 let localDB = null;
 function openLocalDB() {
@@ -463,6 +480,115 @@ async function deleteTrackLocal(id) {
 }
 
 // ========================================================================
+// ПРОВЕРКА МЕСТА + АВТОУДАЛЕНИЕ СТАРОГО ПРИ НЕХВАТКЕ
+// ========================================================================
+async function ensureStorageSpace(neededSize) {
+  if (!navigator.storage || !navigator.storage.estimate) return true;
+
+  let est = await navigator.storage.estimate();
+  let free = est.quota - est.usage;
+  const required = neededSize * 1.5;
+
+  if (free >= required) return true;
+
+  // Не хватает — удаляем самые старые скачанные Blob, пока не освободим
+  const all = await getAllTracksLocal();
+  const downloaded = all
+    .filter(t => t.audioBlob)
+    .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0)); // старые первыми
+
+  if (downloaded.length === 0) {
+    showToast(`❌ Мало места: свободно ${formatSize(free)}, нужно ${formatSize(required)}`, 'error');
+    return false;
+  }
+
+  let deletedCount = 0;
+  for (const oldTrack of downloaded) {
+    const withoutBlob = { ...oldTrack };
+    delete withoutBlob.audioBlob;
+    // «both» → после удаления Blob остаётся облачным
+    if (withoutBlob.source === 'both') withoutBlob.source = 'cloud';
+
+    await saveTrackLocal(withoutBlob);
+    deletedCount++;
+
+    est = await navigator.storage.estimate();
+    free = est.quota - est.usage;
+    if (free >= required) break;
+  }
+
+  if (deletedCount > 0) {
+    showToast(`🗑️ Освобождено место: удалён офлайн-кэш ${deletedCount} трек(ов)`, 'info');
+  }
+
+  if (free < required) {
+    showToast(`❌ Всё ещё мало места: свободно ${formatSize(free)}, нужно ${formatSize(required)}`, 'error');
+    return false;
+  }
+
+  return true;
+}
+
+// ========================================================================
+// СКАЧИВАНИЕ ТРЕКА В INDEXEDDB (кнопка ⬇️)
+// ========================================================================
+async function requestDownload(id) {
+  const track = playerTracks.find(t => t.id === id);
+  if (!track) { showToast('❌ Трек не найден', 'error'); return; }
+  if (track.audioBlob) { showToast('✅ Уже скачан', 'info'); return; }
+  if (!track.audioUrl) { showToast('❌ Нет ссылки на аудио', 'error'); return; }
+
+  let confirmed = false;
+
+  if (track.source === 'cloud') {
+    confirmed = confirm(
+      `Сохранить трек «${track.title}» в облаке и локально?\n\n` +
+      `• В облаке — доступен на всех устройствах\n` +
+      `• Локально — доступен офлайн`
+    );
+  } else {
+    confirmed = confirm(
+      `Скачать трек «${track.title}» для офлайн-доступа?\n\n` +
+      `Файл будет сохранён в хранилище браузера.`
+    );
+  }
+
+  if (!confirmed) return;
+  await downloadTrackToOffline(track);
+}
+
+async function downloadTrackToOffline(track) {
+  try {
+    showToast('⏳ Скачивание...', 'info');
+
+    const res = await fetch(track.audioUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+
+    const hasSpace = await ensureStorageSpace(blob.size);
+    if (!hasSpace) return;
+
+    const updated = { ...track, audioBlob: blob, downloadedAt: Date.now() };
+    delete updated.cloudDocId;
+
+    await saveTrackLocal(updated);
+
+    const idx = playerTracks.findIndex(t => t.id === track.id);
+    if (idx !== -1) playerTracks[idx] = updated;
+
+    showToast(`✅ Скачано (${formatSize(blob.size)})`, 'success');
+    loadPlayerTracks();
+  } catch (e) {
+    console.error('Download failed:', e);
+    if (e.name === 'QuotaExceededError' || (e.message && e.message.includes('quota'))) {
+      showToast('❌ Хранилище переполнено. Удалите треки или очистите кэш.', 'error');
+    } else {
+      showToast('❌ Ошибка скачивания: ' + e.message, 'error');
+    }
+  }
+}
+
+// ========================================================================
 // LOL AUTH
 // ========================================================================
 let authUser = null;
@@ -492,7 +618,7 @@ async function loginWithCode(code) {
   const data = doc.data();
   if (data.expiresAt < Date.now()) throw new Error('Код истёк! Получите новый в LOL Auth');
   const user = await loadUser(data.userId);
-  await db.collection('auth_codes').doc(data.userId).delete();
+  await doc.ref.delete();
   return user;
 }
 function onLoginSuccess(user) {
@@ -612,7 +738,7 @@ $('lolLoginBtn').addEventListener('click', async () => {
 $('lolPassInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('lolLoginBtn').click(); });
 
 // ========================================================================
-// ВЫБОР СОХРАНЕНИЯ (ИСПРАВЛЕННЫЙ)
+// ВЫБОР СОХРАНЕНИЯ — Blob в IndexedDB + (опционально) облако
 // ========================================================================
 let pendingFile = null;
 let pendingTrackData = null;
@@ -624,7 +750,6 @@ function cancelChoice() {
 }
 
 async function confirmSaveChoice(choice) {
-  // ✅ ПРОВЕРКА что данные есть
   if (!pendingFile || !pendingTrackData) {
     showToast('❌ Данные не найдены, попробуйте загрузить заново', 'error');
     $('choiceModal').classList.remove('active');
@@ -633,62 +758,87 @@ async function confirmSaveChoice(choice) {
     return;
   }
 
-  // ✅ СОХРАНЯЕМ ДАННЫЕ В ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ
   const file = pendingFile;
   const trackData = { ...pendingTrackData };
-  
   $('choiceModal').classList.remove('active');
-  
+
+  // Для local/both — Blob сразу в IndexedDB (нужно место). Для cloud — проверим перед записью.
+  if (choice !== 'cloud' && !(await ensureStorageSpace(file.size))) {
+    pendingFile = null;
+    pendingTrackData = null;
+    return;
+  }
+
   try {
-    showToast('⏳ Загрузка...', 'info');
-    let audioUrl = null;
-    
-    // Пробуем загрузить в Cloudinary
-    try {
-      audioUrl = await uploadToCloudinary(file);
-    } catch (e) {
-      console.warn('Cloudinary upload failed:', e);
-      showToast('⚠️ Облачная загрузка не удалась, но локально сохраним', 'error');
-    }
+    showToast('⏳ Сохранение...', 'info');
 
     const track = {
       id: randId(),
       title: trackData.title || file.name.replace(/\.[^/.]+$/, ''),
       artist: trackData.artist || 'Неизвестный',
       cover: trackData.cover || null,
-      audioUrl: audioUrl,
+      // local/both → Blob сразу; cloud → только URL
+      audioBlob: choice === 'cloud' ? null : file,
+      audioUrl: null,
       addedAt: Date.now(),
       source: choice === 'cloud' ? 'cloud' : choice === 'local' ? 'local' : 'both'
     };
 
-    // Сохраняем локально
-    await saveTrackLocal(track);
-    showToast('✅ Сохранено локально', 'success');
-
-    // Если нужно в облако
-    if (authUser && (choice === 'cloud' || choice === 'both')) {
-      await db.collection('user_tracks').add({
-        userId: authUser.uid,
-        originalTrackId: track.id,
-        title: track.title,
-        artist: track.artist,
-        cover: track.cover,
-        audioUrl: track.audioUrl,
-        addedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        isCustomized: false,
-        source: 'cloud'
-      });
-      showToast('☁️ Сохранено в облако', 'success');
+    // Для облака — грузим файл на Cloudinary (для local — не нужно)
+    if (authUser && navigator.onLine && (choice === 'cloud' || choice === 'both')) {
+      try {
+        showToast('☁️ Загрузка в облако...', 'info');
+        track.audioUrl = await uploadToCloudinary(file);
+      } catch (e) {
+        console.warn('Cloudinary upload failed:', e);
+        showToast('⚠️ Облако недоступно, сохраняем только локально', 'error');
+        // Откатываемся: раз облако упало — сохраняем как local
+        if (choice === 'cloud') {
+          track.audioBlob = file;
+          track.source = 'local';
+        } else {
+          track.source = 'local';
+        }
+      }
     }
 
-    // Очищаем данные после успешной загрузки
+    // Облако без авторизации/онлайна — сохраняем как local (иначе трек потеряется)
+    if (choice === 'cloud' && !track.audioUrl) {
+      track.audioBlob = file;
+      track.source = 'local';
+      showToast('⚠️ Облако недоступно — сохранено локально', 'info');
+    }
+
+    await saveTrackLocal(track);
+
+    if (track.audioBlob) showToast('✅ Сохранено локально (офлайн доступно)', 'success');
+    else showToast('✅ Сохранено в облако', 'success');
+
+    // Firestore — только если есть URL
+    if (track.audioUrl && authUser) {
+      try {
+        await db.collection('user_tracks').add({
+          userId: authUser.uid,
+          originalTrackId: track.id,
+          title: track.title,
+          artist: track.artist,
+          cover: track.cover,
+          audioUrl: track.audioUrl,
+          addedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          isCustomized: false,
+          source: 'cloud'
+        });
+      } catch (e) {
+        console.warn('Firestore save failed:', e);
+      }
+    }
+
     pendingFile = null;
     pendingTrackData = null;
     loadPlayerTracks();
   } catch (e) {
     console.error('Save error:', e);
     showToast('❌ Ошибка: ' + e.message, 'error');
-    // Не очищаем данные, чтобы можно было попробовать снова
   }
 }
 
@@ -705,65 +855,99 @@ let tempCoverData = null;
 async function loadPlayerTracks() {
   const container = $('trackListContainer');
   container.innerHTML = '<div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Загрузка...</p></div>';
+
+  // 1) Локальные из IndexedDB (работают всегда)
+  let allTracks = [];
   try {
-    let allTracks = await getAllTracksLocal() || [];
-    if (authUser) {
-      const snap = await db.collection('user_tracks').where('userId', '==', authUser.uid).orderBy('addedAt', 'desc').get();
-      const cloudTracks = [];
+    allTracks = (await getAllTracksLocal()) || [];
+  } catch (e) {
+    console.warn('IndexedDB error:', e);
+  }
+
+  // 2) Облако — только если авторизован и онлайн
+  if (authUser && navigator.onLine) {
+    try {
+      const snap = await db.collection('user_tracks')
+        .where('userId', '==', authUser.uid)
+        .orderBy('addedAt', 'desc')
+        .get();
+
       snap.forEach(doc => {
         const data = doc.data();
-        if (!allTracks.some(t => t.id === data.originalTrackId)) {
-          cloudTracks.push({
-            id: data.originalTrackId,
+        if (!allTracks.some(t => t.id === data.originalTrackId || t.cloudDocId === doc.id)) {
+          allTracks.push({
+            id: data.originalTrackId || doc.id,
             title: data.title,
             artist: data.artist,
             cover: data.cover,
             audioUrl: data.audioUrl,
+            audioBlob: null,
             addedAt: data.addedAt?.toMillis?.() || Date.now(),
             source: 'cloud',
             cloudDocId: doc.id
           });
         }
       });
-      allTracks = [...allTracks, ...cloudTracks];
+    } catch (e) {
+      console.warn('Cloud load failed (offline?):', e);
+      if (allTracks.length) showToast('☁️ Облако недоступно, показываем локальные треки', 'info');
     }
-    allTracks.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-    playerTracks = allTracks;
-    if (playerTracks.length === 0) {
-      container.innerHTML = `<div class="empty-state"><div class="icon">🎵</div><p>${authUser ? 'Нет треков в библиотеке' : 'Нет локальных треков'}</p><p style="font-size:12px;margin-top:8px;">Нажмите + чтобы добавить</p></div>`;
-      return;
-    }
-    container.innerHTML = `<div class="track-list">${playerTracks.map(track => {
-      const isActive = track.id === currentTrackId;
-      const coverHtml = track.cover ? `<img src="${track.cover}">` : `<span class="no-cover">🎵</span>`;
-      const badge = track.source === 'cloud' ? '<span class="track-badge cloud">☁️</span>' :
-                    track.source === 'local' ? '<span class="track-badge local">📱</span>' :
-                    '<span class="track-badge">🔄</span>';
-      return `
-        <div class="track-item ${isActive ? 'active' : ''}" onclick="playTrack('${track.id}')">
-          <div class="track-cover">${coverHtml}</div>
-          <div class="track-info">
-            <div class="track-title">${escapeHtml(track.title)} ${badge}</div>
-            <div class="track-artist">${escapeHtml(track.artist)}</div>
-          </div>
-          <div class="track-actions">
-            <button class="edit-btn" onclick="event.stopPropagation(); openEditTrack('${track.id}')">✏️</button>
-            <button class="delete-btn" onclick="event.stopPropagation(); deleteTrack('${track.id}')">🗑️</button>
-          </div>
-        </div>
-      `;
-    }).join('')}</div>`;
-  } catch (e) {
-    container.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Ошибка загрузки</p></div>`;
   }
+
+  allTracks.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  playerTracks = allTracks;
+
+  if (playerTracks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🎵</div>
+      <p>${navigator.onLine ? 'Нет треков в библиотеке' : 'Нет локальных треков (офлайн)'}</p>
+      <p style="font-size:12px;margin-top:8px;">Нажмите + чтобы добавить</p></div>`;
+    updatePlayerUI();
+    return;
+  }
+
+  container.innerHTML = `<div class="track-list">${playerTracks.map(track => {
+    const isActive = track.id === currentTrackId;
+    const coverHtml = track.cover ? `<img src="${track.cover}" onerror="this.style.display='none'">` : `<span class="no-cover">🎵</span>`;
+
+    const sourceBadge = track.source === 'cloud' ? '<span class="track-badge cloud">☁️</span>' :
+                        track.source === 'local' ? '<span class="track-badge local">📱</span>' :
+                        '<span class="track-badge">🔄</span>';
+    const offlineBadge = track.audioBlob
+      ? '<span class="track-badge offline-yes" title="Доступен офлайн">🟢</span>'
+      : '<span class="track-badge offline-no" title="Только онлайн">⚪</span>';
+
+    const canDownload = !track.audioBlob && track.audioUrl;
+
+    return `
+      <div class="track-item ${isActive ? 'active' : ''}" data-track-id="${track.id}" onclick="playTrack('${track.id}')">
+        <div class="track-cover">${coverHtml}</div>
+        <div class="track-info">
+          <div class="track-title">${escapeHtml(track.title)} ${sourceBadge} ${offlineBadge}</div>
+          <div class="track-artist">${escapeHtml(track.artist)}</div>
+        </div>
+        <div class="track-actions">
+          ${canDownload ? `<button class="download-btn" onclick="event.stopPropagation(); requestDownload('${track.id}')" title="Скачать офлайн">⬇️</button>` : ''}
+          <button class="edit-btn" onclick="event.stopPropagation(); openEditTrack('${track.id}')">✏️</button>
+          <button class="delete-btn" onclick="event.stopPropagation(); deleteTrack('${track.id}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+
   updatePlayerUI();
 }
 
-// ===== ИСПРАВЛЕННАЯ ЗАГРУЗКА =====
+function markActiveInList(id) {
+  document.querySelectorAll('.track-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.trackId === id);
+  });
+}
+
+// ===== ЗАГРУЗКА ФАЙЛА =====
 async function addTrack() {
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.mp3,.wav,.ogg,.aac,.flac,.m4a,.mp4,.webm,.wma,.opus,.alac,.aiff,.au,.raw,.dff,.dsf,.mid,.midi,.kar,.rmi';
+  input.accept = 'audio/*,.mp3,.wav,.ogg,.aac,.flac,.m4a,.mp4,.webm,.wma,.opus';
   input.style.display = 'none';
   document.body.appendChild(input);
 
@@ -789,74 +973,142 @@ async function addTrack() {
       return;
     }
 
+    // Без авторизации — сразу Blob локально
+    if (!(await ensureStorageSpace(file.size))) return;
+
     try {
+      showToast('⏳ Сохранение...', 'info');
       const track = {
         id: randId(),
         title: trackData.title,
         artist: trackData.artist,
         cover: null,
+        audioBlob: file,
         audioUrl: null,
         addedAt: Date.now(),
         source: 'local'
       };
       await saveTrackLocal(track);
-      try {
-        const url = await uploadToCloudinary(file);
-        track.audioUrl = url;
-        await saveTrackLocal(track);
-      } catch (e) {}
-      showToast('✅ Сохранено локально', 'success');
+      showToast('✅ Сохранено локально (офлайн доступно)', 'success');
       loadPlayerTracks();
     } catch (e) {
-      showToast('❌ Ошибка: ' + e.message, 'error');
+      showToast('❌ Ошибка сохранения: ' + e.message, 'error');
     }
   };
   input.click();
 }
 
-function playTrack(id) {
+// ===== ВОСПРОИЗВЕДЕНИЕ =====
+async function playTrack(id, autoPlay = true) {
   const track = playerTracks.find(t => t.id === id);
   if (!track) { showToast('❌ Трек не найден', 'error'); return; }
-  if (!track.audioUrl) { showToast('❌ Аудио не загружено', 'error'); return; }
+
+  // Приоритет: Blob из IndexedDB → URL из облака
+  let src = null;
+  if (track.audioBlob) src = URL.createObjectURL(track.audioBlob);
+  else if (track.audioUrl) src = track.audioUrl;
+  if (!src) { showToast('❌ Аудио не найдено', 'error'); return; }
+
   currentTrackId = id;
+
+  if (!audio) audio = new Audio();
   audio.pause();
-  audio = new Audio(track.audioUrl);
-  audio.playbackRate = parseFloat($('speedSlider').value);
+
+  // Отзываем прошлый ObjectURL
+  if (audio.dataset && audio.dataset.objectUrl) {
+    try { URL.revokeObjectURL(audio.dataset.objectUrl); } catch (e) {}
+  }
+  audio.dataset.objectUrl = track.audioBlob ? src : '';
+
+  audio.src = src;
+  audio.load();
+  audio.playbackRate = parseFloat($('speedSlider').value) || 1;
+
+  audio.onloadedmetadata = () => {
+    $('timeSlider').max = audio.duration;
+    $('totalTime').textContent = formatTime(audio.duration);
+  };
   audio.ontimeupdate = updateTime;
-  audio.onended = nextTrack;
-  audio.onerror = () => { showToast('❌ Ошибка воспроизведения', 'error'); isPlaying = false; updatePlayerUI(); };
-  audio.onloadedmetadata = () => { $('timeSlider').max = audio.duration; $('totalTime').textContent = formatTime(audio.duration); };
-  audio.play().then(() => { isPlaying = true; updatePlayerUI(); updateMediaSession(track); }).catch(() => { showToast('❌ Не удалось воспроизвести', 'error'); });
-  loadPlayerTracks();
+  audio.onended = () => nextTrack(true);
+  audio.onerror = () => {
+    showToast('❌ Ошибка воспроизведения', 'error');
+    isPlaying = false;
+    updatePlayerUI();
+    setTimeout(() => nextTrack(true), 1000);
+  };
+
+  try {
+    if (autoPlay) {
+      await audio.play();
+      isPlaying = true;
+    }
+  } catch (e) {
+    console.warn('Play blocked:', e);
+    isPlaying = false;
+  }
+
   updatePlayerUI();
+  updateMediaSession(track);
+  markActiveInList(id);
 }
+
 function togglePlay() {
   if (!currentTrackId) {
     if (playerTracks.length) playTrack(playerTracks[0].id);
     else showToast('🎵 Нет треков', 'info');
     return;
   }
-  if (isPlaying) { audio.pause(); isPlaying = false; }
-  else { audio.play().then(() => { isPlaying = true; const t = playerTracks.find(x => x.id === currentTrackId); if (t) updateMediaSession(t); }).catch(() => {}); }
-  updatePlayerUI();
+  if (isPlaying) {
+    audio.pause();
+    isPlaying = false;
+    updatePlayerUI();
+    updateMediaSession(playerTracks.find(t => t.id === currentTrackId));
+  } else {
+    audio.play().then(() => {
+      isPlaying = true;
+      updatePlayerUI();
+      updateMediaSession(playerTracks.find(t => t.id === currentTrackId));
+    }).catch(() => {});
+  }
 }
-function nextTrack() {
+
+function nextTrack(auto = false) {
+  if (!playerTracks.length) return;
   const idx = playerTracks.findIndex(t => t.id === currentTrackId);
-  if (idx === -1 || !playerTracks.length) return;
-  playTrack(playerTracks[(idx + 1) % playerTracks.length].id);
+  const nextId = playerTracks[(idx + 1) % playerTracks.length].id;
+  playTrack(nextId, true);
 }
+
 function prevTrack() {
+  if (!playerTracks.length) return;
   const idx = playerTracks.findIndex(t => t.id === currentTrackId);
-  if (idx === -1 || !playerTracks.length) return;
-  playTrack(playerTracks[(idx - 1 + playerTracks.length) % playerTracks.length].id);
+  const prevId = playerTracks[(idx - 1 + playerTracks.length) % playerTracks.length].id;
+  playTrack(prevId, true);
 }
+
 function seekTrack(val) { audio.currentTime = val; $('currentTime').textContent = formatTime(val); }
+
 function updateTime() {
   $('timeSlider').value = audio.currentTime;
   $('currentTime').textContent = formatTime(audio.currentTime);
   if (audio.duration) $('totalTime').textContent = formatTime(audio.duration);
+
+  if ('mediaSession' in navigator && audio.duration && isFinite(audio.duration)) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: audio.duration,
+        playbackRate: audio.playbackRate || 1,
+        position: Math.min(audio.currentTime, audio.duration)
+      });
+    } catch (e) {}
+  }
 }
-function changeSpeed(val) { audio.playbackRate = parseFloat(val); $('speedValue').textContent = val + 'x'; }
+
+function changeSpeed(val) {
+  audio.playbackRate = parseFloat(val);
+  $('speedValue').textContent = val + 'x';
+}
+
 function updatePlayerUI() {
   const track = playerTracks.find(t => t.id === currentTrackId);
   $('playerTitle').textContent = track?.title || 'Нет трека';
@@ -864,31 +1116,88 @@ function updatePlayerUI() {
   $('playerCover').innerHTML = track?.cover ? `<img src="${track.cover}">` : `<span style="color:rgba(255,255,255,0.3);font-size:20px;">🎵</span>`;
   $('playBtn').textContent = isPlaying ? '⏸' : '▶';
 }
+
+// ===== MEDIA SESSION =====
+let mediaSessionReady = false;
+function setupMediaSession() {
+  if (!('mediaSession' in navigator) || mediaSessionReady) return;
+  mediaSessionReady = true;
+  try {
+    navigator.mediaSession.setActionHandler('play', () => {
+      audio.play().then(() => {
+        isPlaying = true;
+        updatePlayerUI();
+        updateMediaSession(playerTracks.find(t => t.id === currentTrackId));
+      }).catch(() => {});
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audio.pause();
+      isPlaying = false;
+      updatePlayerUI();
+      updateMediaSession(playerTracks.find(t => t.id === currentTrackId));
+    });
+    navigator.mediaSession.setActionHandler('stop', () => {
+      audio.pause();
+      audio.currentTime = 0;
+      isPlaying = false;
+      updatePlayerUI();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+    navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+      const step = details.seekOffset || 10;
+      audio.currentTime = Math.max(0, audio.currentTime - step);
+    });
+    navigator.mediaSession.setActionHandler('seekforward', (details) => {
+      const step = details.seekOffset || 10;
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + step);
+    });
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.fastSeek && 'fastSeek' in audio) audio.fastSeek(details.seekTime);
+      else if (details.seekTime != null) audio.currentTime = details.seekTime;
+    });
+  } catch (e) { console.warn('MediaSession handlers error:', e); }
+}
+
 function updateMediaSession(track) {
   if (!track || !('mediaSession' in navigator)) return;
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: track.title,
-      artist: track.artist,
+      title: track.title || 'Без названия',
+      artist: track.artist || 'Неизвестный',
       album: 'LoL Player',
-      artwork: track.cover ? [{ src: track.cover, sizes: '512x512', type: 'image/jpeg' }] : []
+      artwork: track.cover
+        ? [
+            { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
+            { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
+            { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
+          ]
+        : []
     });
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-    navigator.mediaSession.setActionHandler('play', togglePlay);
-    navigator.mediaSession.setActionHandler('pause', togglePlay);
-    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
-    navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
-    navigator.mediaSession.setActionHandler('seekto', (d) => { if (d.seekTime) audio.currentTime = d.seekTime; });
   } catch (e) {}
 }
+
+// ===== УДАЛЕНИЕ =====
 async function deleteTrack(id) {
-  if (!confirm('Удалить трек?')) return;
+  if (!confirm('Удалить трек? Он будет удалён и из офлайн-хранилища.')) return;
   try {
-    await deleteTrackLocal(id);
-    if (authUser) {
-      const snap = await db.collection('user_tracks').where('userId', '==', authUser.uid).where('originalTrackId', '==', id).limit(1).get();
-      snap.forEach(doc => doc.ref.delete());
+    if (audio && audio.dataset && audio.dataset.objectUrl) {
+      try { URL.revokeObjectURL(audio.dataset.objectUrl); } catch (e) {}
+      audio.dataset.objectUrl = '';
     }
+
+    await deleteTrackLocal(id);
+
+    if (authUser && navigator.onLine) {
+      try {
+        const snap = await db.collection('user_tracks')
+          .where('userId', '==', authUser.uid)
+          .where('originalTrackId', '==', id).limit(1).get();
+        snap.forEach(doc => doc.ref.delete());
+      } catch (e) { console.warn('Cloud delete fail:', e); }
+    }
+
     if (currentTrackId === id) { audio.pause(); isPlaying = false; currentTrackId = null; }
     showToast('🗑️ Трек удален', 'success');
     loadPlayerTracks();
@@ -931,12 +1240,14 @@ async function saveTrackEdit() {
   const title = $('editTrackTitle').value.trim() || 'Без названия';
   const artist = $('editTrackArtist').value.trim() || 'Неизвестный';
   const updates = { title, artist };
+
   if (tempCoverData && typeof tempCoverData === 'string' && tempCoverData.startsWith('data:image')) {
     try {
       const blob = await fetch(tempCoverData).then(r => r.blob());
       updates.cover = await uploadToCloudinary(blob);
     } catch (e) { showToast('❌ Ошибка обложки', 'error'); return; }
   }
+
   try {
     const localTracks = await getAllTracksLocal();
     const idx = localTracks.findIndex(t => t.id === id);
@@ -944,10 +1255,16 @@ async function saveTrackEdit() {
       localTracks[idx] = { ...localTracks[idx], ...updates };
       await saveTrackLocal(localTracks[idx]);
     }
-    if (authUser) {
-      const snap = await db.collection('user_tracks').where('userId', '==', authUser.uid).where('originalTrackId', '==', id).limit(1).get();
-      snap.forEach(doc => doc.ref.update(updates));
+
+    if (authUser && navigator.onLine) {
+      try {
+        const snap = await db.collection('user_tracks')
+          .where('userId', '==', authUser.uid)
+          .where('originalTrackId', '==', id).limit(1).get();
+        snap.forEach(doc => doc.ref.update(updates));
+      } catch (e) { console.warn('Cloud edit fail:', e); }
     }
+
     showToast('✅ Сохранено!', 'success');
     closeEditTrackModal();
     loadPlayerTracks();
@@ -1059,35 +1376,31 @@ async function saveIcon() {
       link512.href = icon512;
       link512.click();
     }, 200);
-    updateManifest(icon192, icon512);
     closeIconModal();
     showToast('✅ Иконка сохранена!', 'success');
   } catch (e) { showToast('❌ Ошибка: ' + e.message, 'error'); }
 }
-function updateManifest(icon192, icon512) {
-  const manifest = {
-    name: "LoL Player",
-    short_name: "LoL Player",
-    description: "Музыкальный плеер",
-    start_url: "/",
-    display: "standalone",
-    background_color: "#070a10",
-    theme_color: "#2b86ff",
-    icons: [
-      { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
-      { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
-    ]
-  };
-  localStorage.setItem('lol_manifest', JSON.stringify(manifest));
-  const link = $('manifestLink');
-  if (link) {
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-    link.href = URL.createObjectURL(blob);
-  }
-}
 function openIconModal() { loadIconData(); $('iconModal').classList.add('active'); }
 function closeIconModal() { $('iconModal').classList.remove('active'); }
 $('iconModal').addEventListener('click', function(e) { if (e.target === this) closeIconModal(); });
+
+// ========================================================================
+// ОНЛАЙН / ОФЛАЙН
+// ========================================================================
+function updateOnlineStatus() {
+  const banner = $('offlineBanner');
+  if (navigator.onLine) banner.classList.add('hidden');
+  else banner.classList.remove('hidden');
+}
+window.addEventListener('online', () => {
+  updateOnlineStatus();
+  showToast('🌐 Интернет восстановлен', 'success');
+  if (authUser) loadPlayerTracks();
+});
+window.addEventListener('offline', () => {
+  updateOnlineStatus();
+  showToast('📴 Офлайн-режим: играют 🟢 треки', 'info');
+});
 
 // ========================================================================
 // КЛАВИШИ
@@ -1100,6 +1413,29 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ========================================================================
+// SERVICE WORKER
+// ========================================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { scope: './' })
+      .then((reg) => {
+        console.log('✅ SW registered:', reg.scope);
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (nw) {
+            nw.addEventListener('statechange', () => {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                showToast('🔄 Доступно обновление. Перезагрузите страницу.', 'info');
+              }
+            });
+          }
+        });
+      })
+      .catch((err) => console.warn('SW registration failed:', err));
+  });
+}
+
+// ========================================================================
 // ИНИЦИАЛИЗАЦИЯ
 // ========================================================================
 (async function init() {
@@ -1107,6 +1443,8 @@ document.addEventListener('keydown', (e) => {
   await checkSession();
   await loadPlayerTracks();
   loadIconData();
+  setupMediaSession();
+  updateOnlineStatus();
   if (window.matchMedia('(display-mode: standalone)').matches) {
     console.log('📱 LoL Player работает как PWA');
   }
